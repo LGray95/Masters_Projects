@@ -25,12 +25,10 @@ def ENCORI(args):
                     and int(col[7]) <= split_coords(args.coords)[2]:
                 outlist.append(line)
 
-    return outlist
-
-def writing_out(outlist, args):
     outfile = open(args.outfile, "w")
     for element in outlist:
         outfile.write(element + "\n")
+
 
 def main():
 
@@ -38,9 +36,8 @@ def main():
     args = argparser()
 
     ##Run ENCORI
-    outlist = ENCORI(args)
+    ENCORI(args)
 
-    writing_out(outlist, args)
 
 if __name__ == '__main__':
     main()
