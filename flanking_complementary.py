@@ -42,8 +42,7 @@ for line in infile[0:-1]:
     upstream_and_downstream_seq(line, '/Users/lachlan/OneDrive - UNSW/Masters_Research_2019/Data/ICM/Fibroblast/tmp/')
 
     def complementary_pairing(inpath, outpath):
-        output = NcbiblastnCommandline(query=inpath + 'downstream.fa', subject=inpath + 'upstream.fa', word_size=7, outfmt=5,
-                                       task="blastn")()[0]
+        output = NcbiblastnCommandline(query=inpath + 'downstream.fa', subject=inpath + 'upstream.fa', word_size=7, outfmt=5, task="blastn")()[0]
         blast_result_record = NCBIXML.read(StringIO(output))
 
 

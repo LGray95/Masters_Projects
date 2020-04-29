@@ -52,18 +52,9 @@ for i in microRNA_list:
             list_z = [circRNA, miRNA, i[4]]
             out_list.append(list_z)
 
-print(yes_count)
-print(out_list)
+for i in out_list:
+    print(i[0])
 
-# # Set column headings for outfile
-# outfile = open(args.o, 'w')
-# outfile.write('microRNA_coordinates' + ',' + 'microRNA_type' + ',' +
-#               'microRNA_ID' + ',' + 'circRNA_ID' + ',' + 'strand' + ',' + 'circRNA_gene' + ',' + 'CPM' + ',' + 'Exon_Count' + '\n')
-# for j in out_list:
-#     for k in j:
-#         outfile.write(str(k) + ',')
-#     outfile.write('\n')
-# outfile.close()
 
 
 
