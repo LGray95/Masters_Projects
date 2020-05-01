@@ -1,41 +1,54 @@
-import sys
-
-# Where:
-# Infile is the DCC output file
-# Outdir is the directory where you want to store the results
+import argparse
 
 
+def argparser():
+    parser = argparse.ArgumentParser(description='Ask for path')
+    parser.add_argument("-i", "--infile", help="Path of input DCC file")
+    parser.add_argument("-o", "--outdir", help="Path of output directory")
+    args = parser.parse_args()
 
-# Counts the total columns of the file to parse to range()
+    return args
 
-with open(sys.argv[1]) as file:
-    line = file.readline()
-total_columns = int(len(line.split()))
 
-# Open file
-in_DCC = open(sys.argv[1]).read().splitlines()
-# Read one columns at a time
-for k in range(3, total_columns):
+def read_file(args):
+    infile = open(args.infile, "r").read().splitlines()
+
+    return infile
+
+
+def count_columns(args):
+    with open(args.infile) as infile:
+        line = infile.readline()
+    total_columns = int(len(line.split()))
+
+    return total_columns
+
+
+def split_file(args, total_columns, infile):
     out_list = []
-    for i in in_DCC:
-        col = i.split('\t')
-        chr = col[0]
-        start = col[1]
-        end = col[2]
-        sample = col[k]
-        out_list.append(chr+":"+start+"-"+end+'\t'+sample)
+    for k in range(3, total_columns):
+        for line in infile:
+            col = line.split('\t')
+            out_list.append(col[0]+":"+col[1]+"-"+col[2]+'\t'+col[k])
+
+        sample_id = (out_list[0].split('\t')[1] + "_" + str(k-2))
+
+        outfile = open(args.outdir + sample_id + '.txt', 'w')
+        for element in out_list:
+            outfile.write(str(element) + '\n')
+        outfile.close()
 
 
-    filtered_out_list = []
-    sample_ID =(out_list[0].split('\t')[1])
-    print(sample_ID)
-    # Filter each circRNA for at least two BSJ reads
-    for i in out_list[1:-1]:
-        if int(i.split('\t')[1]) >= 2:
-            filtered_out_list.append(i)
+def main():
 
-    # Write output to  file
-    outfile = open(sys.argv[2]+sample_ID+'.txt', 'w')
-    for i in filtered_out_list:
-        outfile.write(str(i) + '\n')
-    outfile.close()
+    args = argparser()
+
+    infile = read_file(args)
+
+    total_columns = count_columns(args)
+
+    split_file(args, total_columns, infile)
+
+
+if __name__ == '__main__':
+    main()
