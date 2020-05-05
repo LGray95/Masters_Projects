@@ -3,7 +3,7 @@ import argparse
 
 def argparser():
     parser = argparse.ArgumentParser(description="Ask for path")
-    parser.add_argument("-DCC_directory", "-DCC_directory", help="Path to DCC directory")
+    parser.add_argument("-directory", "-directory", help="Path to DCC directory")
     parser.add_argument("-DCC_list", "--DCC_list", help="Path to DCC file")
     parser.add_argument("-CE2_list", "--CE2_list", help="Path to CIRCexplorer2 list")
     parser.add_argument("-CIRI2", "--CIRI2_list", help="Path to CIRI2 input file")
@@ -32,7 +32,7 @@ def CIRI2list(args):
 def merge_datasets1(args, DCC_list, CE2_list):
     for i, j in zip(DCC_list, CE2_list):
         print(i, j)
-        x = pandas.read_csv(args.DCC_directory + i, sep='\t', header=None)
+        x = pandas.read_csv(args.directory + i, sep='\t', header=None)
         y = pandas.read_csv(j, sep='\t', header=None)
 
         # Adding 1 to the circRNA start column of CIRCexplorer2 to compensate for different coordinate systems
@@ -58,7 +58,7 @@ def merge_datasets1(args, DCC_list, CE2_list):
 def merge_datasets2(args, CE2_list, CIRI2_list):
     for i, j in zip(CIRI2_list, CE2_list):
         print(i, j)
-        x = pandas.read_csv(args.DCC_directory + i, sep='\t', header=None)
+        x = pandas.read_csv(args.directory + i, sep='\t', header=None)
         y = pandas.read_csv(j, sep='\t', header=None)
 
         # Adding 1 to the circRNA start column of CIRCexplorer2 to compensate for different coordinate systems
