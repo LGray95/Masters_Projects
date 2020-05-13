@@ -45,7 +45,19 @@ def main():
     ##Run ENCORI
     outlist = ENCORI(args)
 
-    writing_out(outlist, args)
+    print("Counting occurance of each miRNA")
+    total_dict = {}
+    for i in outlist:
+        col = i.split("\t")
+        coord = col[6]
+        if coord in total_dict:
+            total_dict[coord] += 1
+        else:
+            total_dict[coord] = 1
+    for i in (sorted(total_dict.items(), key=lambda x: x[1])):
+        print(i)
+
+    # writing_out(outlist, args)
 
 
 if __name__ == '__main__':
