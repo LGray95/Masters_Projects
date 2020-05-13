@@ -11,12 +11,12 @@ from Bio.Blast.Applications import NcbiblastnCommandline
 from Bio.Blast import NCBIXML
 from io import StringIO
 
+
 def argparser():
     parser = argparse.ArgumentParser(description='Ask for path')
     parser.add_argument("-c", "--coords", help = "circRNA coordinates")
-    parser.add_argument("-tmpdir", "--tmpdir", help="path to out directory")
     parser.add_argument("-g", "--genome", help="path to genome file")
-    parser.add_argument("-outpath", "--outpath", help="Path output file")
+    parser.add_argument("-d", "--directory", help="Path to working directory")
     args = parser.parse_args()
     return args
 
@@ -32,10 +32,10 @@ def get_GC_content(sequence):
 # Creates fasta file with both upstream and downstream sequences
 def upstream_and_downstream_seq(args):
     chromosome = split_coords(args.coords)[0]
-    start = str((split_coords(args.coords)[1]))
-    downstream = str(int(start)-500)
-    end = str(split_coords(args.coords)[2])
-    upstream = str(int(end)+500)
+    start = str(split_coords(args.coords)[1])
+    downstream = str(int(start)-1000)
+    end = str(split_coords(args.coords.replace('"', ""))[2])
+    upstream = str(int(end)+1000)
 
     #using the samtools faidx function to take the appropriate sequence from a reference genome
     downstream_fa = Seq(pysam.faidx(args.genome, chromosome+":"+downstream+"-"+start), generic_dna)
@@ -51,20 +51,20 @@ def upstream_and_downstream_seq(args):
     downstream_seq = SeqRecord(downstream_seq, id="downstream_sequence")
     reverse_compliment_upstream_seq = SeqRecord(reverse_compliment_upstream_seq, id="upstream_sequence")
 
-    if os.path.isdir(args.tmpdir+"tmp/") == False:
-        os.mkdir(args.tmpdir+"tmp/")
+    if os.path.isdir(args.directory+"tmp/") == False:
+        os.mkdir(args.directory+"tmp/")
 
     # Writing sequences to fasta file
-    downstream_outfile = open(os.path.join(args.tmpdir+"tmp/", "downstream.fa"), "w")
+    downstream_outfile = open(os.path.join(args.directory+"tmp/", "downstream.fa"), "w")
     downstream_outfile.write(">"+str(downstream_seq.id) + "\n" + str(downstream_seq.seq))
 
-    upstream_outfile = open(os.path.join(args.tmpdir+"tmp/", "upstream.fa"), "w")
+    upstream_outfile = open(os.path.join(args.directory+"tmp/", "upstream.fa"), "w")
     upstream_outfile.write(">"+str(reverse_compliment_upstream_seq.id) + "\n" + str(reverse_compliment_upstream_seq.seq))
 
 
 def complementary_pairing(args):
-    output = NcbiblastnCommandline(query=args.tmpdir+"tmp/" + 'downstream.fa',
-                                   subject=args.tmpdir+"tmp/" + 'upstream.fa',
+    output = NcbiblastnCommandline(query=args.directory+"tmp/" + 'downstream.fa',
+                                   subject=args.directory+"tmp/" + 'upstream.fa',
                                    word_size=7, outfmt=5, task="blastn")()[0]
     blast_result_record = NCBIXML.read(StringIO(output))
 
@@ -81,18 +81,18 @@ def complementary_pairing(args):
 
                 # Parsing in FASTA files and selecting the sequence
                 # Removing '-' from string and replacing each match with lowercase
-                for SeqRecord in SeqIO.parse(args.tmpdir+"tmp/" + 'downstream.fa', 'fasta'):
+                for SeqRecord in SeqIO.parse(args.directory+"tmp/" + 'downstream.fa', 'fasta'):
                     downstream_inseq = SeqRecord.seq
                     downstream_match = str(match.replace("-", ""))
                     downstream_outseq = str(downstream_inseq).replace(downstream_match, downstream_match.lower())
 
-                for SeqRecord in SeqIO.parse(args.tmpdir+"tmp/" + 'upstream.fa', 'fasta'):
+                for SeqRecord in SeqIO.parse(args.directory+"tmp/" + 'upstream.fa', 'fasta'):
                     upstream_inseq = str(SeqRecord.seq)
                     upstream_outseq = str(Seq(upstream_inseq).reverse_complement())
                     upstream_match = str(Seq(hsp.sbjct).reverse_complement()).replace("-", "")
                     masked_upstream = str(upstream_outseq).replace(upstream_match, upstream_match.lower())
                 filename = args.coords.replace(":", "_")
-                outfile = open(args.outpath + filename + ".fa", 'w')
+                outfile = open(args.directory + filename + ".fa", 'w')
                 outfile.write("e value: " + str(hsp.expect) + "\n"
                               + "Match length: " + str(len(match)) + '\n'
                               + "GC_content: " + str(gc_content) + "\n"
@@ -103,8 +103,6 @@ def complementary_pairing(args):
                               + ">Downstream_seq" + "\n" + str(downstream_outseq) + "\n"
                               + ">Upstream_seq" + "\n" + str(masked_upstream))
 
-
-#complementary_pairing('/Users/lachlan/OneDrive - UNSW/Masters_Research_2019/Data/ICM/Fibroblast/tmp/', '/Users/lachlan/OneDrive - UNSW/Masters_Research_2019/Data/ICM/Fibroblast/enriched_fasta/')
 
 def main():
 
