@@ -1,6 +1,8 @@
 import argparse
 from split_coordinates import split_coords
 
+
+# Set arguments
 def argparser():
     parser = argparse.ArgumentParser(description="Ask for paths")
     parser.add_argument("-c", "--coords", help="circRNA coordinates")
@@ -12,6 +14,7 @@ def argparser():
     return args
 
 
+# Set coordinates of the downstream intron
 def down_intron(args):
     annotation = open(args.annotation, "r").read().splitlines()
     for line in annotation:
@@ -21,6 +24,8 @@ def down_intron(args):
 
             return downstream_intron
 
+
+# Set coordinates of upstream intron
 def up_intron(args):
     annotation = open(args.annotation, "r").read().splitlines()
     for line in annotation:
@@ -31,9 +36,7 @@ def up_intron(args):
             return upstream_intron
 
 
-
-
-
+# Search within ENCORI output to find binding sites of RBP
 def ENCORI(args, downstream_intron, upstream_intron):
     outlist = []
     infile = open(args.infile, "r").read().splitlines()
@@ -43,14 +46,34 @@ def ENCORI(args, downstream_intron, upstream_intron):
             if col[8] == split_coords(args.coords)[0] \
                     and int(col[9]) >= downstream_intron + 1 \
                     and int(col[10]) <= upstream_intron:
+
                 outlist.append(line)
 
     return outlist
 
 
-def intron_binding(args, outlist):
+# Determine where proteins are binding to; Downstream intron, within circRNA, BSJ or Upstream intron
+def location_of_binding(args, outlist):
+    finaloutlist = []
+    for line in outlist:
+        col = line.split("\t")
+        if int(col[9]) < split_coords(args.coords)[1]:
+            line = line + "\t" + "Downstream"
+        elif int(col[9]) > split_coords(args.coords)[2]:
+            line = line + "\t" + "Upstream"
+        elif int(col[9]) > split_coords(args.coords)[1] and int(col[10]) < split_coords(args.coords)[2]:
+            line = line + "\t" + "circRNA"
+        else:
+            line = line + "\t" + "BSJ"
+        finaloutlist.append(line)
+
+    return finaloutlist
+
+
+# Count how many are binding within introns
+def intron_binding(args, finaloutlist):
     yes_count = 0
-    for element in outlist:
+    for element in finaloutlist:
         col = element.split("\t")
         if int(col[9]) < split_coords(args.coords)[1] \
                 or int(col[9]) > split_coords(args.coords)[2]:
@@ -59,15 +82,16 @@ def intron_binding(args, outlist):
     return yes_count
 
 
-def write_out(args, outlist, yes_count):
+# Write output to new file
+def write_out(args, finaloutlist, yes_count):
     outfile = open(args.outfile, "w")
-    for element in outlist:
+    for element in finaloutlist:
         outfile.write(element + "\n")
     outfile.write("Number of intronic Binding sites" + "\t" + str(yes_count) + "\n")
-    outfile.write("Number of circRNA Binding sites" + "\t" + str(len(outlist)-yes_count) + "\n")
+    outfile.write("Number of circRNA Binding sites" + "\t" + str(len(finaloutlist)-yes_count) + "\n")
 
 
-
+# Set main arguments
 def main():
 
     args = argparser()
@@ -78,9 +102,11 @@ def main():
 
     outlist = ENCORI(args, downstream_intron, upstream_intron)
 
-    yes_count = intron_binding(args, outlist)
+    finaloutlist = location_of_binding(args, outlist)
 
-    write_out(args, outlist, yes_count)
+    yes_count = intron_binding(args, finaloutlist)
+
+    write_out(args, finaloutlist, yes_count)
 
 if __name__ == '__main__':
     main()
