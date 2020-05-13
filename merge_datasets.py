@@ -3,7 +3,7 @@ import argparse
 
 def argparser():
     parser = argparse.ArgumentParser(description="Ask for path")
-    parser.add_argument("-directory", "-directory", help="Path to DCC directory")
+    parser.add_argument("-directory", "-directory", help="Path to directory")
     parser.add_argument("-DCC_list", "--DCC_list", help="Path to DCC file")
     parser.add_argument("-CE2_list", "--CE2_list", help="Path to CIRCexplorer2 list")
     parser.add_argument("-CIRI2", "--CIRI2_list", help="Path to CIRI2 input file")
