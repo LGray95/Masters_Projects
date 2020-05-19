@@ -1,5 +1,6 @@
 import argparse
 from split_coordinates import split_coords
+from remove_duplicates import remove_duplicates
 
 
 # Set arguments
@@ -7,7 +8,8 @@ def argparser():
     parser = argparse.ArgumentParser(description="Ask for paths")
     parser.add_argument("-c", "--coords", help="circRNA coordinates")
     parser.add_argument("-i", "--infile", help="ENCORI infile")
-    parser.add_argument("-A", "--annotation", help="path to genome file")
+    parser.add_argument("-A", "--annotation", help="path to intron file")
+    parser.add_argument("-E", "--exon", help="Path to exon file")
     parser.add_argument("-o", "--outfile", help="Out Directory")
     args = parser.parse_args()
 
@@ -36,6 +38,32 @@ def up_intron(args):
             return upstream_intron
 
 
+# indexing gtf for first and last exons
+def exon_coords(args):
+    line_number1 = []
+    line_number2 = []
+    exon_file = open(args.exon).read().splitlines()
+    for line in exon_file:
+        col = line.split("\t")
+        if col[0] == split_coords(args.coords)[0] and col[2] == "exon" and col[3] == str(split_coords(args.coords)[1]):
+            line_number1.append(exon_file.index(line))
+        if col[0] == split_coords(args.coords)[0] and col[2] == "exon" and col[4] == str(split_coords(args.coords)[2]):
+            line_number2.append(exon_file.index(line))
+
+
+    # Making list of exons composing circRNA
+    exon_list = []
+    for line in exon_file[line_number1[0]:line_number2[0]+1]:
+        col = line.split("\t")
+        if col[2] == "exon":
+            exon_list.append(col[0] + ":" + col[3] + "-" + col[4])
+
+    exon_list = remove_duplicates(exon_list)
+
+    return exon_list
+
+
+
 # Search within ENCORI output to find binding sites of RBP
 def ENCORI(args, downstream_intron, upstream_intron):
     outlist = []
@@ -52,8 +80,8 @@ def ENCORI(args, downstream_intron, upstream_intron):
     return outlist
 
 
-# Determine where proteins are binding to; Downstream intron, within circRNA, BSJ or Upstream intron
-def location_of_binding(args, outlist):
+# Determine where proteins are binding to; Downstream intron, within circRNA, BSJ, exon, or Upstream intron
+def location_of_binding(args, outlist, exon_list):
     finaloutlist = []
     for line in outlist:
         col = line.split("\t")
@@ -63,9 +91,15 @@ def location_of_binding(args, outlist):
             line = line + "\t" + "Upstream"
         elif int(col[9]) > split_coords(args.coords)[1] and int(col[10]) < split_coords(args.coords)[2]:
             line = line + "\t" + "circRNA"
-        else:
+        elif int(col[9]) == split_coords(args.coords)[1] or int(col[10]) == split_coords(args.coords)[2]:
+            line = line + "\t" + "BSJ"
+        elif int(col[10]) > split_coords(args.coords)[1] or int(col[9]) < split_coords(args.coords)[2]:
             line = line + "\t" + "BSJ"
         finaloutlist.append(line)
+        for exon in exon_list:
+            if int(col[9]) >= split_coords(exon)[1] and int(col[10]) <= split_coords(exon)[2]:
+                line = line + "\t" + "Exon Binding"
+            finaloutlist.append(line)
 
     return finaloutlist
 
@@ -100,9 +134,11 @@ def main():
 
     upstream_intron = up_intron(args)
 
+    exon_list = exon_coords(args)
+
     outlist = ENCORI(args, downstream_intron, upstream_intron)
 
-    finaloutlist = location_of_binding(args, outlist)
+    finaloutlist = location_of_binding(args, outlist, exon_list)
 
     yes_count = intron_binding(args, finaloutlist)
 
