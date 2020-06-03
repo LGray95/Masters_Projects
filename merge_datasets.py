@@ -1,4 +1,4 @@
-import pandas
+import pandas as pd
 import argparse
 
 def argparser():
@@ -32,8 +32,8 @@ def CIRI2list(args):
 def merge_datasets1(args, DCC_list, CE2_list):
     for i, j in zip(DCC_list, CE2_list):
         print(i, j)
-        x = pandas.read_csv(args.directory + i, sep='\t', header=None)
-        y = pandas.read_csv(j, sep='\t', header=None)
+        x = pd.read_csv(args.directory + i, sep='\t', header=None)
+        y = pd.read_csv(j, sep='\t', header=None)
 
         # Adding 1 to the circRNA start column of CIRCexplorer2 to compensate for different coordinate systems
         y[1] += 1
@@ -43,42 +43,40 @@ def merge_datasets1(args, DCC_list, CE2_list):
         y[0] = y.apply(lambda x: '%s-%s' % (x[0], x[2]), axis=1)
 
         # Merging The dataframe
-        merged_df = pandas.merge(x, y, on=0)
+        merged_df = pd.merge(x, y, on=0)
 
-        merged_df['1_x'] = pandas.to_numeric(merged_df['1_x'])
+        merged_df['1_x'] = pd.to_numeric(merged_df['1_x'])
 
-        merged_df[12] = pandas.to_numeric(merged_df[12])
+        merged_df[12] = pd.to_numeric(merged_df[12])
 
         merged_df[18] = ((merged_df['1_x'] + merged_df[12]) / 2)
 
         print(merged_df[merged_df.duplicated(subset=0)])
 
-        merged_df.to_csv(args.outdirectory + i, sep='\t', index=False)
+        merged_df.to_csv(args.outdirectory + ("merged_" + i.split('/')[-1].split('_')[-1]), sep='\t', index=False)
 
 def merge_datasets2(args, CE2_list, CIRI2_list):
     for i, j in zip(CIRI2_list, CE2_list):
         print(i, j)
-        x = pandas.read_csv(args.directory + i, sep='\t', header=None)
-        y = pandas.read_csv(j, sep='\t', header=None)
-
-        # Adding 1 to the circRNA start column of CIRCexplorer2 to compensate for different coordinate systems
-        y[1] += 1
+        x = pd.read_csv(i, sep='\t', header=None)
+        y = pd.read_csv(j, sep='\t', header=None)
 
         # Making the circRNA_ID column
-        y[0] = y[0].replace("|", "-")
+        y[2] = pd.to_numeric(y[2][1:-1]) - 1
+        y[2] = y[2].dropna().astype(int).astype(str)
+
+        # Making the circRNA_ID column
+        y[0] = y.apply(lambda x: '%s:%s' % (x[1], x[2]), axis=1)
+        y[0] = y.apply(lambda x: '%s-%s' % (x[0], x[3]), axis=1)
+        x[0] = x.apply(lambda x: '%s:%s' % (x[0], x[1]), axis=1)
+        x[0] = x.apply(lambda x: '%s-%s' % (x[0], x[2]), axis=1)
 
         # Merging The dataframe
-        merged_df = pandas.merge(x, y, on=0)
+        merged_df = pd.merge(x, y, on=0)
 
-        merged_df['1_x'] = pandas.to_numeric(merged_df['1_x'])
+        print(merged_df.shape)
 
-        merged_df[12] = pandas.to_numeric(merged_df[12])
-
-        merged_df[18] = ((merged_df['1_x'] + merged_df[12]) / 2)
-
-        print(merged_df[merged_df.duplicated(subset=0)])
-
-        merged_df.to_csv(args.outdirectory + i, sep='\t', index=False)
+        merged_df.to_csv(args.outdirectory + ("merged_" + j.split('/')[-1].split('_')[-1]), sep='\t', index=False)
 
 def main():
 
@@ -99,3 +97,6 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+
+
