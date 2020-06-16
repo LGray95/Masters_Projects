@@ -49,7 +49,7 @@ def merge_datasets1(args, DCC_list, CE2_list):
 
         merged_df[12] = pd.to_numeric(merged_df[12])
 
-        merged_df[18] = ((merged_df['1_x'] + merged_df[12]) / 2)
+        merged_df['Avg_Expression'] = ((merged_df['1_x'] + merged_df[12]) / 2)
 
         print(merged_df[merged_df.duplicated(subset=0)])
 
@@ -73,6 +73,8 @@ def merge_datasets2(args, CE2_list, CIRI2_list):
 
         # Merging The dataframe
         merged_df = pd.merge(x, y, on=0)
+
+        merged_df['Avg_Expression'] = merged_df[[12, '4_y']].mean(axis=1)
 
         print(merged_df.shape)
 
