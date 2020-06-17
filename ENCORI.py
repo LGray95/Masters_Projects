@@ -21,7 +21,7 @@ def ENCORI(args):
     outlist = []
     infile = open(args.infile, "r").read().splitlines()
     for line in infile:
-        if "#" not in line:
+        if "#" and "No Available results" not in line:
             col = line.split("\t")
             if col[5] == split_coords(args.coords)[0] \
                     and int(col[6]) >= split_coords(args.coords)[1] \
@@ -57,7 +57,7 @@ def main():
     for i in (sorted(total_dict.items(), key=lambda x: x[1])):
         print(i)
 
-    # writing_out(outlist, args)
+    writing_out(outlist, args)
 
 
 if __name__ == '__main__':
