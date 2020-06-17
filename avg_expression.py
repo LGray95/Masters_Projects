@@ -1,7 +1,8 @@
 # This program was developed by Liam Cheney in 2019-2020
 import argparse
 
-def argparse():
+
+def argparser():
     parser = argparse.ArgumentParser(description='Ask for files')
     parser.add_argument("-i", "--infile", help = "input filename")
     parser.add_argument("-o", "--outfile", help = "output filename")
@@ -10,7 +11,7 @@ def argparse():
     return args
 
 def read_infile(args):
-    infile = open(args.infile,'r').read().splitlines()
+    infile = open(args.infile, 'r').read().splitlines()
 
     return infile
 
@@ -20,16 +21,24 @@ def gathering_info(infile):
     total_dict = {}
     count = 0
     for line in infile[1:]:
-        if 'circRNA_ID' not in line:
+        if 'Avg_Expression' not in line:
             count = count + 1
             col = line.split('\t')
-            circ_name = col[5]
-            cpm = float(col[18].strip('\"'))
+            circ_name = col[0]
+            exp = int(col[29])
+            exons = col[16]
+            strand = col[5]
+            gene = col[14]
+            enst = col[15]
 
             if circ_name not in total_dict.keys():
-                total_dict[circ_name] = {'cpm':[]}
+                total_dict[circ_name] = {'exp':[]}
 
-            total_dict[circ_name]['cpm'].append(cpm)
+            total_dict[circ_name]['exp'].append(exp)
+            total_dict[circ_name]['exon'] = exons
+            total_dict[circ_name]['strand'] = strand
+            total_dict[circ_name]['gene'] = gene
+            total_dict[circ_name]['enst'] = enst
 
     return total_dict
 
@@ -37,27 +46,36 @@ def gathering_info(infile):
 def calc_averages(total_dict):
     print('Calculating Averages.')
     average_dict = {}
-    for key in total_dict.keys():
-        cpm_avg = sum(total_dict[key]['cpm']) / len(total_dict[key]['cpm'])
-        average_dict[key] = {'cpm':cpm_avg}
+    for key, value in total_dict.items():
+        exp_avg = sum(total_dict[key]['exp']) / len(total_dict[key]['exp'])
+        average_dict[key] = {'exp':exp_avg}
+        average_dict[key]['strand'] = value['strand']
+        average_dict[key]['exon'] = value['exon']
+        average_dict[key]['gene'] = value['gene']
+        average_dict[key]['enst'] = value['enst']
+
 
     return average_dict
 
 
 def writing_out(args, average_dict):
     print('Writing out.')
-    with open(args.o,'w') as out:
-        out.write('circRNA_ID' + '\t' + 'Avg tpm' + '\n')
+    with open(args.outfile, 'w') as out:
+        out.write('circRNA_ID' + '\t' + 'Strand' + '\t' + 'Exon Composition' + '\t' + 'Gene' + '\t' + 'Ensembl ID' + '\t' + 'Avg exp' + '\n')
         for key in average_dict.keys():
-            cpm = str(average_dict[key]['cpm'])
+            exp = str(average_dict[key]['exp'])
+            strand = average_dict[key]['strand']
+            gene = average_dict[key]['gene']
+            exon = average_dict[key]['exon']
+            enst = average_dict[key]['enst']
 
-            out.write(key + '\t' + cpm + '\n')
+            out.write(key + '\t' + strand + '\t' + exon + '\t' + gene + '\t' + enst + '\t' + exp + '\n')
 
 
 def main():
 
     # set arguments
-    args = argparse()
+    args = argparser()
 
     # Read infile
     infile = read_infile(args)
