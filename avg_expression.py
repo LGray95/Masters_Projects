@@ -10,6 +10,7 @@ def argparser():
 
     return args
 
+
 def read_infile(args):
     infile = open(args.infile, 'r').read().splitlines()
 
@@ -54,14 +55,14 @@ def calc_averages(total_dict):
         average_dict[key]['gene'] = value['gene']
         average_dict[key]['enst'] = value['enst']
 
-
     return average_dict
 
 
 def writing_out(args, average_dict):
     print('Writing out.')
     with open(args.outfile, 'w') as out:
-        out.write('circRNA_ID' + '\t' + 'Strand' + '\t' + 'Exon Composition' + '\t' + 'Gene' + '\t' + 'Ensembl ID' + '\t' + 'Avg exp' + '\n')
+        out.write('circRNA_ID' + '\t' + 'Strand' + '\t' + 'Exon Composition' + '\t' + 'Gene' + '\t' +
+                  'Ensembl ID' + '\t' + 'Avg exp' + '\n')
         for key in average_dict.keys():
             exp = str(average_dict[key]['exp'])
             strand = average_dict[key]['strand']
