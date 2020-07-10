@@ -3,63 +3,40 @@ import argparse
 
 def argparser():
     parser = argparse.ArgumentParser(description="Ask for path")
-    parser.add_argument("-directory", "-directory", help="Path to directory")
-    parser.add_argument("-DCC_list", "--DCC_list", help="Path to DCC file")
-    parser.add_argument("-CE2_list", "--CE2_list", help="Path to CIRCexplorer2 list")
-    parser.add_argument("-CIRI2", "--CIRI2_list", help="Path to CIRI2 input file")
-    parser.add_argument("-o", "--outdirectory", help="output file")
+    parser.add_argument("-DCC", "--DCC", help="Path to DCC input file")
+    parser.add_argument("-CE2", "--CE2", help="Path to CIRCexplorer2 input file")
+    parser.add_argument("-CIRI2", "--CIRI2", help="Path to CIRI2 input file")
+    parser.add_argument("-o", "--outdirectory", help="output directory")
     args = parser.parse_args()
     return args
 
+def merge_datasets1(args):
+    x = pd.read_csv(args.DCC, sep='\t', header=None)
+    y = pd.read_csv(args.CE2, sep='\t', header=None)
 
-def DCClist(args):
-    if args.DCC_list is not None:
-        DCC_list = open(args.DCC_list, "r").read().splitlines()
-        return DCC_list
+    # Adding 1 to the circRNA start column of CIRCexplorer2 to compensate for different coordinate systems
+    y[1] += 1
 
+    # Making the circRNA_ID column
+    y[0] = y.apply(lambda x: '%s:%s' % (x[0], x[1]), axis=1)
+    y[0] = y.apply(lambda x: '%s-%s' % (x[0], x[2]), axis=1)
 
-def CE2list(args):
-    if args.CE2_list is not None:
-        CE2_list = open(args.CE2_list, "r").read().splitlines()
-        return CE2_list
+    # Merging The dataframe
+    merged_df = pd.merge(x, y, on=0)
 
-def CIRI2list(args):
-    if args.CIRI2_list is not None:
-        CIRI2_list = open(args.CIRI2_list, "r").read().splitlines()
-        return CIRI2_list
+    merged_df['4_x'] = pd.to_numeric(merged_df['4_x'])
 
+    merged_df[12] = pd.to_numeric(merged_df[12])
 
-def merge_datasets1(args, DCC_list, CE2_list):
-    for i, j in zip(DCC_list, CE2_list):
-        print(i, j)
-        x = pd.read_csv(args.directory + i, sep='\t', header=None)
-        y = pd.read_csv(j, sep='\t', header=None)
+    merged_df['Avg_Expression'] = merged_df[[12, '4_y']].mean(axis=1)
 
-        # Adding 1 to the circRNA start column of CIRCexplorer2 to compensate for different coordinate systems
-        y[1] += 1
+    print(merged_df.shape)
 
-        # Making the circRNA_ID column
-        y[0] = y.apply(lambda x: '%s:%s' % (x[0], x[1]), axis=1)
-        y[0] = y.apply(lambda x: '%s-%s' % (x[0], x[2]), axis=1)
+    merged_df.to_csv(args.outdirectory + ("merged_" + args.DCC.split('/')[-1]), sep='\t', index=False)
 
-        # Merging The dataframe
-        merged_df = pd.merge(x, y, on=0)
-
-        merged_df['1_x'] = pd.to_numeric(merged_df['1_x'])
-
-        merged_df[12] = pd.to_numeric(merged_df[12])
-
-        merged_df['Avg_Expression'] = ((merged_df['1_x'] + merged_df[12]) / 2)
-
-        print(merged_df[merged_df.duplicated(subset=0)])
-
-        merged_df.to_csv(args.outdirectory + ("merged_" + i.split('/')[-1].split('_')[-1]), sep='\t', index=False)
-
-def merge_datasets2(args, CE2_list, CIRI2_list):
-    for i, j in zip(CIRI2_list, CE2_list):
-        print(i, j)
-        x = pd.read_csv(i, sep='\t', header=None)
-        y = pd.read_csv(j, sep='\t', header=None)
+def merge_datasets2(args):
+        x = pd.read_csv(args.CIRI2, sep='\t', header=None)
+        y = pd.read_csv(args.CE2, sep='\t', header=None)
 
         # Making the circRNA_ID column
         y[2] = pd.to_numeric(y[2][1:-1]) - 1
@@ -78,23 +55,19 @@ def merge_datasets2(args, CE2_list, CIRI2_list):
 
         print(merged_df.shape)
 
-        merged_df.to_csv(args.outdirectory + ("merged_" + j.split('/')[-1].split('_')[-1]), sep='\t', index=False)
+        merged_df.to_csv(args.outdirectory + ("merged_" + args.CIRI2.split('/')[-1].split('_')[-1]), sep='\t', index=False)
 
 def main():
 
     ## args define
     args = argparser()
 
-    CE2_list = CE2list(args)
-
     ## Reading in lists
-    if args.DCC_list is not None:
-        DCC_list = DCClist(args)
-        merge_datasets1(args, DCC_list, CE2_list)
+    if args.DCC is not None:
+        merge_datasets1(args)
 
-    if args.CIRI2_list is not None:
-        CIRI2_list = CIRI2list(args)
-        merge_datasets2(args, CIRI2_list, CE2_list)
+    if args.CIRI2 is not None:
+        merge_datasets2(args)
 
 
 if __name__ == '__main__':
