@@ -14,7 +14,6 @@ def argparser():
     parser.add_argument("-A", help = "Path to Annotation file")
     parser.add_argument("-ID", help = "circRNA coordinates chr:start-end")
     parser.add_argument("-s", help = "circRNA strand")
-    #parser.add_argument("-o", help = "path to output file")
     args = parser.parse_args()
     
     return args
