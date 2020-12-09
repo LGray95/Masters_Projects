@@ -1,4 +1,5 @@
 import argparse
+import pandas as pd
 
 
 def argparser():
@@ -16,48 +17,29 @@ def split_coords(coords):
     end = int(coords.split(":")[1].split("-")[1])
     return chr, start, end
 
-
 def ENCORI(args):
-    outlist = []
-    infile = open(args.infile, "r").read().splitlines()
-    for line in infile:
-        if "#" and "No Available results" not in line:
-            col = line.split("\t")
-            if col[5] == split_coords(args.coords)[0] \
-                    and int(col[6]) >= split_coords(args.coords)[1] \
-                    and int(col[7]) <= split_coords(args.coords)[2]:
-                outlist.append(line)
+    df = pd.read_csv(args.infile, sep="\t", skiprows=3, header=0)
+    df["start"] = pd.to_numeric(df["start"])
+    df["end"] = pd.to_numeric(df["end"])
+    filtered_df = df[(df["chromosome"] == split_coords(args.coords)[0]) & (df["start"] >= split_coords(args.coords)[1]) & (df["end"] <= split_coords(args.coords)[2])]
 
-    return outlist
+    return filtered_df
 
 
-def writing_out(outlist, args):
-    outfile = open(args.outfile, "w")
-    for element in outlist:
-        outfile.write(element + "\n")
+def writing_out(filtered_df, args):
+    filtered_df.to_csv(args.outfile, sep="\t", index=False)
 
 
 def main():
 
-    ##args define
+    # args define
     args = argparser()
 
-    ##Run ENCORI
-    outlist = ENCORI(args)
+    # Run ENCORI
+    filtered_df = ENCORI(args)
 
-    print("Counting occurance of each miRNA")
-    total_dict = {}
-    for i in outlist:
-        col = i.split("\t")
-        coord = col[6]
-        if coord in total_dict:
-            total_dict[coord] += 1
-        else:
-            total_dict[coord] = 1
-    for i in (sorted(total_dict.items(), key=lambda x: x[1])):
-        print(i)
-
-    writing_out(outlist, args)
+    # Write out file
+    writing_out(filtered_df, args)
 
 
 if __name__ == '__main__':
